@@ -521,6 +521,66 @@ dialog form {
   gap: 10px;
 }
 
+.public-guide {
+  margin-top: 24px;
+}
+
+.guide-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.guide-grid article {
+  border: 1px solid #29313a;
+  border-radius: 8px;
+  padding: 16px;
+  background: #10151b;
+}
+
+.guide-grid p,
+.content-article p {
+  color: #b6c0cc;
+  line-height: 1.7;
+}
+
+.content-page {
+  width: min(860px, 100%);
+  margin: 0 auto;
+  padding: 32px 20px 72px;
+}
+
+.content-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 28px;
+}
+
+.content-nav a {
+  color: #eef2f6;
+  text-decoration: none;
+  background: #20262e;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.content-article {
+  border: 1px solid #29313a;
+  border-radius: 8px;
+  padding: clamp(22px, 4vw, 36px);
+  background: #11161c;
+}
+
+.content-article h1 {
+  max-width: 760px;
+}
+
+.content-article a {
+  color: #77d9ac;
+}
+
 @media (max-width: 1050px) {
   .summary-grid { grid-template-columns: repeat(2, 1fr); }
   .insight-grid { grid-template-columns: 1fr; }
@@ -553,6 +613,7 @@ dialog form {
   }
   .panel-tools { justify-content: flex-start; }
   .summary-grid { grid-template-columns: 1fr 1fr; }
+  .guide-grid { grid-template-columns: 1fr; }
   .summary-card { min-height: 100px; }
   .project-metrics { grid-template-columns: repeat(3, 1fr); }
   .roadmap-grid,
