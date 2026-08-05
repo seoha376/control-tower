@@ -506,6 +506,21 @@ dialog form {
 .full-width { grid-column: 1 / -1; }
 .dialog-actions { justify-content: flex-end; }
 
+.adsense-connection-panel {
+  margin-bottom: 22px;
+}
+
+.connection-message {
+  color: #b6c0cc;
+  margin: 0 0 16px;
+}
+
+.connection-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 @media (max-width: 1050px) {
   .summary-grid { grid-template-columns: repeat(2, 1fr); }
   .insight-grid { grid-template-columns: 1fr; }

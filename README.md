@@ -7,8 +7,8 @@
 ## 현재 기능
 
 - Supabase Auth 기반 GitHub 로그인 준비
-- `allowedEmail` 설정을 통한 소유자 이메일 제한
-- Supabase RLS 정책으로 소유자 이메일만 DB 접근 허용
+- Supabase Auth 사용자별 데이터 분리
+- Supabase RLS 정책으로 `owner_id = auth.uid()` 데이터만 접근 허용
 - Supabase `projects` 테이블 저장
 - 서비스 추가, 수정, 삭제
 - AdSense 상태 관리: 신청 전, 심사 중, 승인, 심사 실패
@@ -42,12 +42,9 @@ npm.cmd run serve
 export const CONTROL_TOWER_CONFIG = {
   supabaseUrl: 'https://프로젝트ID.supabase.co',
   supabaseAnonKey: 'Supabase anon public key',
-  allowedEmail: '내이메일@example.com',
   redirectTo: 'https://control-tower-wheat.vercel.app/'
 };
 ```
-
-`allowedEmail`은 반드시 실제 내 로그인 이메일이어야 합니다. 비어 있거나 `YOUR_EMAIL@example.com` 그대로면 앱은 로그인 버튼을 보여주지 않습니다.
 
 `supabaseAnonKey`는 브라우저 앱에서 쓰는 public anon key입니다. 실제 데이터 보호는 `docs/supabase-schema.sql`의 RLS 정책이 담당합니다.
 
@@ -63,17 +60,21 @@ export const CONTROL_TOWER_CONFIG = {
 
 ## AdSense 자동 동기화 설정
 
-현재 구현은 Vercel 서버리스 API가 Google AdSense Management API에서 사이트 상태를 읽고, Control Tower의 서비스 URL과 도메인이 일치하는 항목만 갱신합니다.
+현재 구현은 Vercel 서버리스 API가 Google AdSense Management API에서 사이트 상태를 읽고, Control Tower의 서비스 URL과 도메인이 일치하는 항목만 갱신합니다. 사용자가 Google AdSense를 연결하면 사용자별 암호화 refresh token을 사용하고, 연결 계정이 없으면 기존 개인 Vercel env refresh token을 fallback으로 사용합니다.
 
-Supabase SQL Editor에서 `docs/supabase-schema.sql`을 다시 실행해 다음 액션 컬럼을 추가합니다.
+Supabase SQL Editor에서 `docs/supabase-schema.sql`을 다시 실행해 `profiles`, `connected_accounts`, 멀티유저 RLS 정책을 적용합니다.
 
 Vercel Project Settings > Environment Variables에 아래 값을 추가합니다.
 
 ```text
 GOOGLE_ADSENSE_CLIENT_ID=Google OAuth 클라이언트 ID
 GOOGLE_ADSENSE_CLIENT_SECRET=Google OAuth 클라이언트 secret
-GOOGLE_ADSENSE_REFRESH_TOKEN=adsense.readonly 스코프로 발급한 refresh token
-GOOGLE_ADSENSE_ACCOUNT_NAME=accounts/pub-... (선택, 비우면 첫 계정 사용)
+GOOGLE_ADSENSE_REFRESH_TOKEN=개인 fallback refresh token (선택)
+GOOGLE_ADSENSE_ACCOUNT_NAME=accounts/pub-... (선택)
+SUPABASE_URL=https://프로젝트ID.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=Supabase service role key
+TOKEN_ENCRYPTION_KEY=32바이트 문자열 또는 base64 인코딩된 32바이트 키
+ADSENSE_OAUTH_STATE_SECRET=OAuth state 서명용 긴 랜덤 문자열
 ```
 
-OAuth refresh token은 `https://www.googleapis.com/auth/adsense.readonly` 스코프로 발급해야 합니다. 배포 후 로그인한 상태에서 `AdSense 동기화` 버튼을 누르면 사이트 상태가 `승인`, `심사 중`, `심사 실패`, `신청 전`으로 반영되고 다음 액션도 함께 갱신됩니다.
+Google OAuth 클라이언트의 승인된 리디렉션 URI에는 `https://control-tower-wheat.vercel.app/api/adsense/connect/callback`을 추가합니다. 배포 후 로그인한 상태에서 `Connect Google AdSense`로 연결하고 `AdSense 동기화` 버튼을 누르면 사이트 상태가 `승인`, `심사 중`, `심사 실패`, `신청 전`으로 반영됩니다.

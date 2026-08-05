@@ -18,10 +18,7 @@ export function hasOwnerEmailConfigured(config = {}) {
 }
 
 export function isAuthorizedUser(user, config = {}) {
-  if (!user) return false;
-  if (!hasOwnerEmailConfigured(config)) return false;
-  const allowedEmail = String(config.allowedEmail || '').trim().toLowerCase();
-  return String(user.email || '').trim().toLowerCase() === allowedEmail;
+  return Boolean(user?.id || user?.email);
 }
 
 export function toProjectRow(project, ownerId) {

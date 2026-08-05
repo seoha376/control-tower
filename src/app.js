@@ -18,7 +18,6 @@ import {
 import { CONTROL_TOWER_CONFIG } from './config.js';
 import {
   createSupabaseProjectStore,
-  hasOwnerEmailConfigured,
   isAuthorizedUser,
   isSupabaseConfigured
 } from './projectStore.js';
@@ -36,6 +35,10 @@ const elements = {
   loginGithub: document.querySelector('#loginGithub'),
   logoutButton: document.querySelector('#logoutButton'),
   syncStatus: document.querySelector('#syncStatus'),
+  adsenseConnectionBadge: document.querySelector('#adsenseConnectionBadge'),
+  adsenseConnectionMessage: document.querySelector('#adsenseConnectionMessage'),
+  connectAdsenseButton: document.querySelector('#connectAdsenseButton'),
+  disconnectAdsenseButton: document.querySelector('#disconnectAdsenseButton'),
   addButton: document.querySelector('#openProjectDialog'),
   syncAdsenseButton: document.querySelector('#syncAdsenseButton'),
   list: document.querySelector('#projectList'),
@@ -59,6 +62,7 @@ let supabase = null;
 let store = null;
 let projects = [];
 let canEdit = false;
+let currentSession = null;
 
 function deployLabel(status) {
   return ({
@@ -86,6 +90,14 @@ function applyAuthState(viewState) {
   elements.logoutButton.hidden = viewState.mode !== 'signed-in' && viewState.mode !== 'blocked';
   elements.addButton.disabled = !canEdit;
   elements.syncAdsenseButton.disabled = !canEdit;
+  elements.connectAdsenseButton.disabled = !canEdit;
+  elements.disconnectAdsenseButton.disabled = !canEdit;
+}
+
+function getAuthHeaders() {
+  return currentSession?.access_token
+    ? { authorization: `Bearer ${currentSession.access_token}` }
+    : {};
 }
 
 async function signIn(provider) {
@@ -128,7 +140,9 @@ async function syncAdSenseStatuses() {
   setSyncStatus('AdSense 현황을 불러오는 중입니다...');
 
   try {
-    const response = await fetch('/api/adsense/status');
+    const response = await fetch('/api/adsense/status', {
+      headers: getAuthHeaders()
+    });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
       throw new Error(payload.error || 'AdSense 현황을 불러오지 못했습니다.');
@@ -158,7 +172,71 @@ async function syncAdSenseStatuses() {
   }
 }
 
+function renderAdSenseConnection(connection) {
+  const status = connection?.connectionStatus || 'needs_connection';
+  const connected = status === 'connected';
+  elements.adsenseConnectionBadge.textContent = connected ? 'Connected' : 'Connection needed';
+  elements.adsenseConnectionBadge.dataset.tone = connected ? 'success' : 'warning';
+  elements.adsenseConnectionMessage.textContent = connected
+    ? `Connected account: ${connection.providerAccountId || 'Google AdSense'}`
+    : 'Connect Google AdSense to sync site approval status with the signed-in user account.';
+  elements.disconnectAdsenseButton.disabled = !canEdit || !connected;
+}
+
+async function refreshAdSenseConnection() {
+  if (!canEdit) {
+    renderAdSenseConnection(null);
+    return;
+  }
+
+  try {
+    const response = await fetch('/api/adsense/connection', {
+      headers: getAuthHeaders()
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload.error || 'AdSense connection status unavailable.');
+    renderAdSenseConnection(payload);
+  } catch (error) {
+    elements.adsenseConnectionBadge.textContent = 'Connection unknown';
+    elements.adsenseConnectionBadge.dataset.tone = 'warning';
+    elements.adsenseConnectionMessage.textContent = error.message || 'AdSense connection status unavailable.';
+  }
+}
+
+async function connectAdSense() {
+  if (!canEdit) return;
+
+  try {
+    const returnTo = encodeURIComponent(window.location.href.split('#')[0]);
+    const response = await fetch(`/api/adsense/connect/start?returnTo=${returnTo}`, {
+      headers: getAuthHeaders()
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload.error || 'Could not start Google AdSense connection.');
+    window.location.href = payload.url;
+  } catch (error) {
+    setSyncStatus(error.message || 'AdSense connection failed.', 'error');
+  }
+}
+
+async function disconnectAdSense() {
+  if (!canEdit || !confirm('Disconnect Google AdSense from this Control Tower account?')) return;
+
+  try {
+    const response = await fetch('/api/adsense/connection', {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload.error || 'Could not disconnect Google AdSense.');
+    renderAdSenseConnection(payload);
+  } catch (error) {
+    setSyncStatus(error.message || 'AdSense disconnect failed.', 'error');
+  }
+}
+
 async function handleSession(session) {
+  currentSession = session || null;
   const user = session?.user || null;
   const authorized = isAuthorizedUser(user, CONTROL_TOWER_CONFIG);
   const viewState = createAuthViewState({
@@ -170,6 +248,7 @@ async function handleSession(session) {
 
   if (!user) {
     store = null;
+    renderAdSenseConnection(null);
     setSyncStatus('로그인 후 데이터를 불러옵니다.');
     await refreshProjects();
     return;
@@ -183,6 +262,7 @@ async function handleSession(session) {
   }
 
   store = createSupabaseProjectStore(supabase, user.id);
+  await refreshAdSenseConnection();
   await refreshProjects();
 }
 
@@ -398,14 +478,6 @@ async function init() {
     return;
   }
 
-  const ownerConfigured = hasOwnerEmailConfigured(CONTROL_TOWER_CONFIG);
-  if (!ownerConfigured) {
-    applyAuthState(createAuthViewState({ configured: true, ownerConfigured: false }));
-    setSyncStatus('소유자 이메일 설정 대기 중');
-    render();
-    return;
-  }
-
   supabase = createClient(CONTROL_TOWER_CONFIG.supabaseUrl, CONTROL_TOWER_CONFIG.supabaseAnonKey);
   supabase.auth.onAuthStateChange((_event, session) => {
     void handleSession(session);
@@ -423,6 +495,8 @@ elements.addButton.addEventListener('click', () => openDialog());
 elements.loginGithub.addEventListener('click', () => signIn(elements.loginGithub.dataset.provider || 'github'));
 elements.logoutButton.addEventListener('click', signOut);
 elements.syncAdsenseButton.addEventListener('click', syncAdSenseStatuses);
+elements.connectAdsenseButton.addEventListener('click', connectAdSense);
+elements.disconnectAdsenseButton.addEventListener('click', disconnectAdSense);
 document.querySelector('#closeDialog').addEventListener('click', closeDialog);
 document.querySelector('#cancelDialog').addEventListener('click', closeDialog);
 elements.githubUrlInput.addEventListener('input', applyGithubUrlSuggestion);

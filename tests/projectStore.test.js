@@ -21,11 +21,9 @@ test('isSupabaseConfigured rejects missing and placeholder settings', () => {
   }), true);
 });
 
-test('isAuthorizedUser allows only the configured owner email when present', () => {
-  assert.equal(isAuthorizedUser({ email: 'owner@example.com' }, {}), false);
-  assert.equal(isAuthorizedUser({ email: 'owner@example.com' }, { allowedEmail: 'YOUR_EMAIL@example.com' }), false);
-  assert.equal(isAuthorizedUser({ email: 'owner@example.com' }, { allowedEmail: 'owner@example.com' }), true);
-  assert.equal(isAuthorizedUser({ email: 'other@example.com' }, { allowedEmail: 'owner@example.com' }), false);
+test('isAuthorizedUser allows any signed-in user in multi-user mode', () => {
+  assert.equal(isAuthorizedUser({ id: 'user-1', email: 'owner@example.com' }, {}), true);
+  assert.equal(isAuthorizedUser({ id: 'user-2', email: 'other@example.com' }, { allowedEmail: 'owner@example.com' }), true);
   assert.equal(isAuthorizedUser(null, { allowedEmail: 'owner@example.com' }), false);
 });
 

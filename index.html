@@ -43,6 +43,21 @@
         </div>
       </section>
 
+      <section class="panel adsense-connection-panel" aria-labelledby="adsenseConnectionTitle">
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">ADSENSE CONNECTION</p>
+            <h2 id="adsenseConnectionTitle">Google AdSense</h2>
+          </div>
+          <span id="adsenseConnectionBadge" class="operational-status-badge" data-tone="warning">Connection needed</span>
+        </div>
+        <p id="adsenseConnectionMessage" class="connection-message">Sign in, then connect Google AdSense to sync site approval status with your own account.</p>
+        <div class="connection-actions">
+          <button id="connectAdsenseButton" class="secondary-button" type="button" disabled>Connect Google AdSense</button>
+          <button id="disconnectAdsenseButton" class="secondary-button" type="button" disabled>Disconnect</button>
+        </div>
+      </section>
+
       <section class="summary-grid" aria-label="운영 요약 지표">
         <article class="summary-card"><span>전체 서비스</span><strong id="projectCount">0</strong></article>
         <article class="summary-card"><span>AdSense 승인</span><strong id="approvedCount">0</strong></article>
