@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="여러 웹사이트의 배포, 애드센스 심사 상태, 수익을 한곳에서 관리하는 개인 운영 대시보드" />
+  <meta name="description" content="여러 웹서비스의 배포, AdSense, 수익, 운영 상태를 관리하는 개인 Control Tower" />
   <title>Control Tower</title>
   <link rel="stylesheet" href="./styles.css" />
 </head>
@@ -12,30 +12,43 @@
     <aside class="sidebar">
       <div class="brand">CONTROL TOWER</div>
       <p class="brand-copy">개인 웹서비스 운영센터</p>
-      <nav>
-        <a class="nav-item active" href="#dashboard">대시보드</a>
-        <a class="nav-item" href="#projects">서비스</a>
-        <a class="nav-item" href="#roadmap">연동 예정</a>
+      <nav aria-label="주요 화면">
+        <a class="nav-item active" href="#dashboard">Dashboard</a>
+        <a class="nav-item" href="#projects">Websites</a>
+        <a class="nav-item" href="#roadmap">Roadmap</a>
       </nav>
-      <div class="sidebar-note">현재 버전은 브라우저에 데이터를 저장합니다.</div>
+      <div class="sidebar-note">현재 버전은 GitHub 로그인과 Supabase DB를 사용하도록 준비되어 있습니다.</div>
     </aside>
 
     <main>
       <header class="topbar" id="dashboard">
         <div>
           <p class="eyebrow">OPERATIONS OVERVIEW</p>
-          <h1>모든 사이트의 상태를 한눈에</h1>
-          <p class="subtitle">애드센스 심사, 배포 상태, 일·월 수익을 한곳에서 관리합니다.</p>
+          <h1>모든 서비스를 한 곳에서 관리합니다</h1>
+          <p class="subtitle">배포 상태, AdSense 심사, 수익 기록을 Supabase에 저장하고 Vercel 배포를 기준으로 운영합니다.</p>
         </div>
-        <button id="openProjectDialog" class="primary-button">서비스 추가</button>
+        <button id="openProjectDialog" class="primary-button" disabled>서비스 추가</button>
       </header>
 
-      <section class="summary-grid" aria-label="요약 지표">
+      <section id="authPanel" class="auth-panel" data-mode="setup" aria-live="polite">
+        <div>
+          <p class="eyebrow">ACCESS</p>
+          <h2 id="authTitle">Supabase 연결 필요</h2>
+          <p id="authMessage">src/config.js에 Supabase URL, anon key, 소유자 이메일을 입력하면 GitHub 로그인과 DB 저장을 사용할 수 있습니다.</p>
+          <p id="syncStatus" class="sync-status" data-tone="neutral">Supabase 설정 대기 중</p>
+        </div>
+        <div class="auth-actions">
+          <button id="loginGithub" class="secondary-button" type="button" hidden>GitHub로 로그인</button>
+          <button id="logoutButton" class="secondary-button" type="button" hidden>로그아웃</button>
+        </div>
+      </section>
+
+      <section class="summary-grid" aria-label="운영 요약 지표">
         <article class="summary-card"><span>전체 서비스</span><strong id="projectCount">0</strong></article>
-        <article class="summary-card"><span>애드센스 승인</span><strong id="approvedCount">0</strong></article>
+        <article class="summary-card"><span>AdSense 승인</span><strong id="approvedCount">0</strong></article>
         <article class="summary-card"><span>심사 중</span><strong id="reviewingCount">0</strong></article>
-        <article class="summary-card"><span>오늘 수익</span><strong id="todayRevenue">₩0</strong></article>
-        <article class="summary-card featured"><span>이번 달 수익</span><strong id="monthRevenue">₩0</strong></article>
+        <article class="summary-card"><span>오늘 수익</span><strong id="todayRevenue">0원</strong></article>
+        <article class="summary-card featured"><span>이번 달 수익</span><strong id="monthRevenue">0원</strong></article>
       </section>
 
       <section class="panel" id="projects">
@@ -44,7 +57,7 @@
             <p class="eyebrow">WEBSITES</p>
             <h2>운영 서비스</h2>
           </div>
-          <select id="statusFilter" aria-label="애드센스 상태 필터">
+          <select id="statusFilter" aria-label="AdSense 상태 필터">
             <option value="all">전체 상태</option>
             <option value="not_applied">신청 전</option>
             <option value="reviewing">심사 중</option>
@@ -54,18 +67,21 @@
         </div>
         <div id="projectList" class="project-list"></div>
         <div id="emptyState" class="empty-state" hidden>
-          <h3>등록된 서비스가 없습니다.</h3>
-          <p>첫 서비스를 추가하면 애드센스 상태와 수익을 관리할 수 있습니다.</p>
+          <h3 id="emptyTitle">표시할 서비스가 없습니다.</h3>
+          <p id="emptyMessage">Supabase 설정과 로그인이 완료되면 서비스 목록을 관리할 수 있습니다.</p>
         </div>
       </section>
 
       <section class="panel roadmap" id="roadmap">
-        <div><p class="eyebrow">NEXT CONNECTIONS</p><h2>자동 연동 예정</h2></div>
+        <div>
+          <p class="eyebrow">NEXT CONNECTIONS</p>
+          <h2>자동 연동 예정</h2>
+        </div>
         <div class="roadmap-grid">
-          <article><strong>Google AdSense API</strong><span>수익 자동 집계</span></article>
-          <article><strong>GitHub API</strong><span>Actions·커밋 상태</span></article>
-          <article><strong>Google Analytics</strong><span>방문자·유입 분석</span></article>
-          <article><strong>Search Console</strong><span>검색 노출·클릭</span></article>
+          <article><strong>GitHub API</strong><span>Repository 상태, Actions 결과, 최근 배포 시간</span></article>
+          <article><strong>Google AdSense API</strong><span>사이트별 승인 여부와 수익 자동 갱신</span></article>
+          <article><strong>Google Analytics</strong><span>방문자, 세션, 인기 페이지 분석</span></article>
+          <article><strong>Search Console</strong><span>검색 유입, 클릭수, 노출수 추적</span></article>
         </div>
       </section>
     </main>
@@ -73,7 +89,13 @@
 
   <dialog id="projectDialog">
     <form id="projectForm" method="dialog">
-      <div class="dialog-header"><div><p class="eyebrow">SERVICE RECORD</p><h2 id="dialogTitle">서비스 추가</h2></div><button type="button" class="icon-button" id="closeDialog" aria-label="닫기">×</button></div>
+      <div class="dialog-header">
+        <div>
+          <p class="eyebrow">SERVICE RECORD</p>
+          <h2 id="dialogTitle">서비스 추가</h2>
+        </div>
+        <button type="button" class="icon-button" id="closeDialog" aria-label="닫기">x</button>
+      </div>
       <input type="hidden" id="projectId" />
       <div class="form-grid">
         <label>서비스 이름<input id="name" required placeholder="Hot Appearance" /></label>
@@ -83,9 +105,12 @@
         <label>AdSense 상태<select id="adsenseStatus"><option value="not_applied">신청 전</option><option value="reviewing">심사 중</option><option value="approved">승인</option><option value="rejected">심사 실패</option></select></label>
         <label>오늘 수익(원)<input id="todayRevenueInput" type="number" min="0" step="1" value="0" /></label>
         <label>이번 달 수익(원)<input id="monthRevenueInput" type="number" min="0" step="1" value="0" /></label>
-        <label class="full-width">메모<textarea id="note" rows="3" placeholder="심사 실패 사유, 수정할 내용 등"></textarea></label>
+        <label class="full-width">메모<textarea id="note" rows="3" placeholder="심사 사유, 수정 내용, 다음 작업"></textarea></label>
       </div>
-      <div class="dialog-actions"><button type="button" class="secondary-button" id="cancelDialog">취소</button><button class="primary-button" value="default">저장</button></div>
+      <div class="dialog-actions">
+        <button type="button" class="secondary-button" id="cancelDialog">취소</button>
+        <button class="primary-button" value="default">저장</button>
+      </div>
     </form>
   </dialog>
 
@@ -93,14 +118,22 @@
     <article class="project-card">
       <div class="project-main">
         <div class="status-dot"></div>
-        <div><div class="project-title-row"><h3></h3><span class="adsense-badge"></span></div><a class="site-link" target="_blank" rel="noreferrer"></a><p class="note"></p></div>
+        <div>
+          <div class="project-title-row"><h3></h3><span class="adsense-badge"></span></div>
+          <a class="site-link" target="_blank" rel="noreferrer"></a>
+          <p class="note"></p>
+        </div>
       </div>
       <div class="project-metrics">
         <div><span>배포</span><strong class="deploy-label"></strong></div>
         <div><span>오늘</span><strong class="today-value"></strong></div>
         <div><span>이번 달</span><strong class="month-value"></strong></div>
       </div>
-      <div class="project-actions"><a class="github-button" target="_blank" rel="noreferrer">GitHub</a><button class="edit-button">수정</button><button class="delete-button">삭제</button></div>
+      <div class="project-actions">
+        <a class="github-button" target="_blank" rel="noreferrer">GitHub</a>
+        <button class="edit-button" type="button">수정</button>
+        <button class="delete-button" type="button">삭제</button>
+      </div>
     </article>
   </template>
 

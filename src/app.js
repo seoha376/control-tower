@@ -1,71 +1,203 @@
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm';
+import { createAuthViewState, getAuthProviders, getOAuthRedirectTo } from './authState.js';
 import { calculateSummary, getStatusLabel, normalizeProject } from './domain.js';
+import { CONTROL_TOWER_CONFIG } from './config.js';
+import {
+  createSupabaseProjectStore,
+  hasOwnerEmailConfigured,
+  isAuthorizedUser,
+  isSupabaseConfigured
+} from './projectStore.js';
 
-const STORAGE_KEY = 'control-tower-projects-v1';
-const currency = new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW', maximumFractionDigits: 0 });
-const sampleProjects = [
-  normalizeProject({ name: 'Hot Appearance', url: 'https://example.com', githubUrl: 'https://github.com/', deployStatus: 'healthy', adsenseStatus: 'not_applied', note: '도메인 연결 후 AdSense 신청 예정' })
-];
+const currency = new Intl.NumberFormat('ko-KR', {
+  style: 'currency',
+  currency: 'KRW',
+  maximumFractionDigits: 0
+});
 
 const elements = {
-  list: document.querySelector('#projectList'), empty: document.querySelector('#emptyState'), template: document.querySelector('#projectTemplate'),
-  dialog: document.querySelector('#projectDialog'), form: document.querySelector('#projectForm'), filter: document.querySelector('#statusFilter')
+  authPanel: document.querySelector('#authPanel'),
+  authTitle: document.querySelector('#authTitle'),
+  authMessage: document.querySelector('#authMessage'),
+  loginGithub: document.querySelector('#loginGithub'),
+  logoutButton: document.querySelector('#logoutButton'),
+  syncStatus: document.querySelector('#syncStatus'),
+  addButton: document.querySelector('#openProjectDialog'),
+  list: document.querySelector('#projectList'),
+  empty: document.querySelector('#emptyState'),
+  emptyTitle: document.querySelector('#emptyTitle'),
+  emptyMessage: document.querySelector('#emptyMessage'),
+  template: document.querySelector('#projectTemplate'),
+  dialog: document.querySelector('#projectDialog'),
+  form: document.querySelector('#projectForm'),
+  filter: document.querySelector('#statusFilter')
 };
 
-let projects = loadProjects();
+let supabase = null;
+let store = null;
+let projects = [];
+let canEdit = false;
 
-function loadProjects() {
-  try {
-    const value = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    return Array.isArray(value) ? value.map(normalizeProject) : sampleProjects;
-  } catch {
-    return sampleProjects;
-  }
+function deployLabel(status) {
+  return ({
+    healthy: '정상',
+    warning: '확인 필요',
+    down: '오류',
+    unknown: '미확인'
+  })[status] || '미확인';
 }
 
-function saveProjects() { localStorage.setItem(STORAGE_KEY, JSON.stringify(projects)); }
-function deployLabel(status) { return ({ healthy: '정상', warning: '확인 필요', down: '오류', unknown: '미확인' })[status] || '미확인'; }
+function setSyncStatus(message, tone = 'neutral') {
+  elements.syncStatus.textContent = message;
+  elements.syncStatus.dataset.tone = tone;
+}
 
-function render() {
+function applyAuthState(viewState) {
+  canEdit = viewState.canEdit;
+  const [primaryProvider] = getAuthProviders();
+  elements.authPanel.dataset.mode = viewState.mode;
+  elements.authTitle.textContent = viewState.title;
+  elements.authMessage.textContent = viewState.message;
+  elements.loginGithub.hidden = viewState.mode !== 'signed-out';
+  elements.loginGithub.textContent = primaryProvider.label;
+  elements.loginGithub.dataset.provider = primaryProvider.provider;
+  elements.logoutButton.hidden = viewState.mode !== 'signed-in' && viewState.mode !== 'blocked';
+  elements.addButton.disabled = !canEdit;
+}
+
+async function signIn(provider) {
+  if (!supabase) return;
+  const redirectTo = getOAuthRedirectTo(CONTROL_TOWER_CONFIG, window.location.href);
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider,
+    options: { redirectTo }
+  });
+  if (error) setSyncStatus(error.message, 'error');
+}
+
+async function signOut() {
+  if (!supabase) return;
+  await supabase.auth.signOut();
+}
+
+async function refreshProjects() {
+  if (!store) {
+    projects = [];
+    render();
+    return;
+  }
+
+  try {
+    setSyncStatus('Supabase에서 데이터를 불러오는 중입니다...');
+    projects = await store.list();
+    setSyncStatus(`동기화 완료: ${projects.length}개 서비스`, 'success');
+  } catch (error) {
+    setSyncStatus(error.message || 'Supabase 동기화에 실패했습니다.', 'error');
+    projects = [];
+  }
+  render();
+}
+
+async function handleSession(session) {
+  const user = session?.user || null;
+  const authorized = isAuthorizedUser(user, CONTROL_TOWER_CONFIG);
+  const viewState = createAuthViewState({
+    configured: true,
+    user,
+    authorized
+  });
+  applyAuthState(viewState);
+
+  if (!user) {
+    store = null;
+    setSyncStatus('로그인 후 데이터를 불러옵니다.');
+    await refreshProjects();
+    return;
+  }
+
+  if (!authorized) {
+    store = null;
+    setSyncStatus('허용된 소유자 이메일로 다시 로그인하세요.', 'error');
+    await refreshProjects();
+    return;
+  }
+
+  store = createSupabaseProjectStore(supabase, user.id);
+  await refreshProjects();
+}
+
+function renderSummary() {
   const summary = calculateSummary(projects);
   document.querySelector('#projectCount').textContent = summary.projectCount;
   document.querySelector('#approvedCount').textContent = summary.approvedCount;
   document.querySelector('#reviewingCount').textContent = summary.reviewingCount;
   document.querySelector('#todayRevenue').textContent = currency.format(summary.todayRevenue);
   document.querySelector('#monthRevenue').textContent = currency.format(summary.monthRevenue);
+}
+
+function renderEmptyState(visibleCount) {
+  const isEmpty = visibleCount === 0;
+  elements.empty.hidden = !isEmpty;
+  if (!isEmpty) return;
+
+  if (!canEdit) {
+    elements.emptyTitle.textContent = '표시할 서비스가 없습니다.';
+    elements.emptyMessage.textContent = 'Supabase 설정과 로그인이 완료되면 서비스 목록을 관리할 수 있습니다.';
+    return;
+  }
+
+  elements.emptyTitle.textContent = '등록된 서비스가 없습니다.';
+  elements.emptyMessage.textContent = '첫 서비스를 추가하면 배포, AdSense 상태, 수익을 한 곳에서 추적합니다.';
+}
+
+function render() {
+  renderSummary();
 
   const filter = elements.filter.value;
   const visible = filter === 'all' ? projects : projects.filter(project => project.adsenseStatus === filter);
   elements.list.replaceChildren();
-  elements.empty.hidden = visible.length > 0;
+  renderEmptyState(visible.length);
 
   visible.forEach(project => {
     const card = elements.template.content.firstElementChild.cloneNode(true);
     card.dataset.deploy = project.deployStatus;
     card.dataset.adsense = project.adsenseStatus;
     card.querySelector('h3').textContent = project.name;
+
     const siteLink = card.querySelector('.site-link');
     siteLink.textContent = project.url || '사이트 주소 미등록';
     siteLink.href = project.url || '#';
     if (!project.url) siteLink.removeAttribute('target');
+
     card.querySelector('.note').textContent = project.note || '메모 없음';
     card.querySelector('.adsense-badge').textContent = getStatusLabel(project.adsenseStatus);
     card.querySelector('.deploy-label').textContent = deployLabel(project.deployStatus);
     card.querySelector('.today-value').textContent = currency.format(project.todayRevenue);
     card.querySelector('.month-value').textContent = currency.format(project.monthRevenue);
+
     const github = card.querySelector('.github-button');
     github.href = project.githubUrl || '#';
     github.classList.toggle('disabled', !project.githubUrl);
+
+    card.querySelector('.edit-button').disabled = !canEdit;
+    card.querySelector('.delete-button').disabled = !canEdit;
     card.querySelector('.edit-button').addEventListener('click', () => openDialog(project));
-    card.querySelector('.delete-button').addEventListener('click', () => {
-      if (confirm(`${project.name}을(를) 삭제하시겠습니까?`)) {
-        projects = projects.filter(item => item.id !== project.id); saveProjects(); render();
+    card.querySelector('.delete-button').addEventListener('click', async () => {
+      if (!canEdit || !confirm(`${project.name}을 삭제하시겠습니까?`)) return;
+      try {
+        await store.remove(project.id);
+        await refreshProjects();
+      } catch (error) {
+        setSyncStatus(error.message || '삭제에 실패했습니다.', 'error');
       }
     });
+
     elements.list.append(card);
   });
 }
 
 function openDialog(project = null) {
+  if (!canEdit) return;
   elements.form.reset();
   document.querySelector('#dialogTitle').textContent = project ? '서비스 수정' : '서비스 추가';
   document.querySelector('#projectId').value = project?.id || '';
@@ -80,14 +212,14 @@ function openDialog(project = null) {
   elements.dialog.showModal();
 }
 
-function closeDialog() { elements.dialog.close(); }
+function closeDialog() {
+  elements.dialog.close();
+}
 
-document.querySelector('#openProjectDialog').addEventListener('click', () => openDialog());
-document.querySelector('#closeDialog').addEventListener('click', closeDialog);
-document.querySelector('#cancelDialog').addEventListener('click', closeDialog);
-elements.filter.addEventListener('change', render);
-elements.form.addEventListener('submit', event => {
+async function saveForm(event) {
   event.preventDefault();
+  if (!canEdit || !store) return;
+
   const id = document.querySelector('#projectId').value;
   const record = normalizeProject({
     id: id || undefined,
@@ -100,8 +232,52 @@ elements.form.addEventListener('submit', event => {
     monthRevenue: document.querySelector('#monthRevenueInput').value,
     note: document.querySelector('#note').value
   });
-  projects = id ? projects.map(project => project.id === id ? record : project) : [record, ...projects];
-  saveProjects(); closeDialog(); render();
-});
 
-render();
+  try {
+    await store.save(record);
+    closeDialog();
+    await refreshProjects();
+  } catch (error) {
+    setSyncStatus(error.message || '저장에 실패했습니다.', 'error');
+  }
+}
+
+async function init() {
+  const configured = isSupabaseConfigured(CONTROL_TOWER_CONFIG);
+  if (!configured) {
+    applyAuthState(createAuthViewState({ configured: false }));
+    setSyncStatus('Supabase 설정 대기 중');
+    render();
+    return;
+  }
+
+  const ownerConfigured = hasOwnerEmailConfigured(CONTROL_TOWER_CONFIG);
+  if (!ownerConfigured) {
+    applyAuthState(createAuthViewState({ configured: true, ownerConfigured: false }));
+    setSyncStatus('소유자 이메일 설정 대기 중');
+    render();
+    return;
+  }
+
+  supabase = createClient(CONTROL_TOWER_CONFIG.supabaseUrl, CONTROL_TOWER_CONFIG.supabaseAnonKey);
+  supabase.auth.onAuthStateChange((_event, session) => {
+    void handleSession(session);
+  });
+
+  const { data, error } = await supabase.auth.getSession();
+  if (error) {
+    setSyncStatus(error.message, 'error');
+    return;
+  }
+  await handleSession(data.session);
+}
+
+elements.addButton.addEventListener('click', () => openDialog());
+elements.loginGithub.addEventListener('click', () => signIn(elements.loginGithub.dataset.provider || 'github'));
+elements.logoutButton.addEventListener('click', signOut);
+document.querySelector('#closeDialog').addEventListener('click', closeDialog);
+document.querySelector('#cancelDialog').addEventListener('click', closeDialog);
+elements.filter.addEventListener('change', render);
+elements.form.addEventListener('submit', saveForm);
+
+void init();
