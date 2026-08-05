@@ -36,6 +36,12 @@ test('createAdSenseProjectPatch maps AdSense site states to project status and n
     nextActionNote: 'AdSense GETTING_READY: example.com'
   });
 
+  assert.deepEqual(createAdSenseProjectPatch({ state: 'REQUIRES_REVIEW', domain: 'example.com' }), {
+    adsenseStatus: 'reviewing',
+    nextAction: 'check_adsense',
+    nextActionNote: 'AdSense REQUIRES_REVIEW: example.com'
+  });
+
   assert.deepEqual(createAdSenseProjectPatch({ state: 'NEEDS_ATTENTION', domain: 'example.com' }), {
     adsenseStatus: 'rejected',
     nextAction: 'check_adsense',

@@ -134,3 +134,5 @@ create index if not exists projects_owner_updated_idx
 
 create index if not exists connected_accounts_owner_provider_idx
   on public.connected_accounts (owner_id, provider);
+
+notify pgrst, 'reload schema';

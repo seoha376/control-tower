@@ -1,7 +1,7 @@
 const ADSENSE_STATE_PATCHES = {
   REQUIRES_REVIEW: {
-    adsenseStatus: 'not_applied',
-    nextAction: 'apply_adsense'
+    adsenseStatus: 'reviewing',
+    nextAction: 'check_adsense'
   },
   GETTING_READY: {
     adsenseStatus: 'reviewing',
