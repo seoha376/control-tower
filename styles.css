@@ -198,6 +198,87 @@ h2, h3, p { margin-top: 0; }
   border-color: #2e6f60;
 }
 
+.operational-panel {
+  display: grid;
+  gap: 18px;
+}
+
+.operational-status-badge {
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #0b0d10;
+  background: #77d9ac;
+}
+
+.operational-status-badge[data-tone="warning"] {
+  background: #ffc767;
+}
+
+.operational-messages,
+.insight-column ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.operational-messages {
+  display: grid;
+  gap: 8px;
+}
+
+.operational-messages li {
+  color: #dce5ee;
+  line-height: 1.5;
+}
+
+.insight-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  border-top: 1px solid #29313a;
+  padding-top: 16px;
+}
+
+.insight-column {
+  min-width: 0;
+}
+
+.insight-column h3 {
+  margin-bottom: 12px;
+  color: #dce5ee;
+  font-size: 14px;
+}
+
+.insight-column ul {
+  display: grid;
+  gap: 9px;
+}
+
+.insight-column li {
+  display: grid;
+  gap: 3px;
+  min-height: 46px;
+  padding: 0 0 10px;
+  border-bottom: 1px solid #202832;
+}
+
+.insight-column li:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.insight-column strong {
+  overflow-wrap: anywhere;
+}
+
+.insight-column span,
+.insight-empty {
+  color: #9aa5b1;
+  font-size: 12px;
+}
+
 .panel {
   margin-top: 18px;
   padding: 22px;
@@ -391,6 +472,7 @@ dialog form {
 
 @media (max-width: 1050px) {
   .summary-grid { grid-template-columns: repeat(2, 1fr); }
+  .insight-grid { grid-template-columns: 1fr; }
   .project-card { grid-template-columns: 1fr; }
   .project-actions { justify-content: flex-start; }
   .roadmap-grid { grid-template-columns: repeat(2, 1fr); }

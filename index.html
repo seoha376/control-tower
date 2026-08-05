@@ -51,6 +51,31 @@
         <article class="summary-card featured"><span>이번 달 수익</span><strong id="monthRevenue">0원</strong></article>
       </section>
 
+      <section class="panel operational-panel" aria-labelledby="operationalInsightsTitle">
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">CHECKLIST</p>
+            <h2 id="operationalInsightsTitle">운영 요약</h2>
+          </div>
+          <span id="operationalStatusBadge" class="operational-status-badge">정상</span>
+        </div>
+        <ul id="operationalMessages" class="operational-messages" aria-live="polite"></ul>
+        <div class="insight-grid">
+          <section class="insight-column" aria-labelledby="attentionServicesTitle">
+            <h3 id="attentionServicesTitle">확인 필요한 서비스</h3>
+            <ul id="attentionServices"></ul>
+          </section>
+          <section class="insight-column" aria-labelledby="reviewingServicesTitle">
+            <h3 id="reviewingServicesTitle">AdSense 심사 중</h3>
+            <ul id="reviewingServices"></ul>
+          </section>
+          <section class="insight-column" aria-labelledby="zeroRevenueServicesTitle">
+            <h3 id="zeroRevenueServicesTitle">수익 확인 필요</h3>
+            <ul id="zeroRevenueServices"></ul>
+          </section>
+        </div>
+      </section>
+
       <section class="panel" id="projects">
         <div class="panel-header">
           <div>

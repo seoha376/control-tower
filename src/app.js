@@ -1,6 +1,15 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm';
 import { createAuthViewState, getAuthProviders, getOAuthRedirectTo } from './authState.js';
-import { calculateSummary, getStatusLabel, normalizeProject } from './domain.js';
+import {
+  calculateOperationalInsights,
+  calculateSummary,
+  getStatusLabel,
+  normalizeProject
+} from './domain.js';
+import {
+  parseGithubRepositoryUrl,
+  suggestProjectNameFromRepository
+} from './githubRepository.js';
 import { CONTROL_TOWER_CONFIG } from './config.js';
 import {
   createSupabaseProjectStore,
@@ -30,7 +39,14 @@ const elements = {
   template: document.querySelector('#projectTemplate'),
   dialog: document.querySelector('#projectDialog'),
   form: document.querySelector('#projectForm'),
-  filter: document.querySelector('#statusFilter')
+  nameInput: document.querySelector('#name'),
+  githubUrlInput: document.querySelector('#githubUrl'),
+  filter: document.querySelector('#statusFilter'),
+  operationalStatusBadge: document.querySelector('#operationalStatusBadge'),
+  operationalMessages: document.querySelector('#operationalMessages'),
+  attentionServices: document.querySelector('#attentionServices'),
+  reviewingServices: document.querySelector('#reviewingServices'),
+  zeroRevenueServices: document.querySelector('#zeroRevenueServices')
 };
 
 let supabase = null;
@@ -135,6 +151,56 @@ function renderSummary() {
   document.querySelector('#monthRevenue').textContent = currency.format(summary.monthRevenue);
 }
 
+function getAttentionReason(project) {
+  if (project.deployStatus === 'down') return '배포 오류';
+  if (project.deployStatus === 'warning') return '배포 확인 필요';
+  if (project.adsenseStatus === 'rejected') return 'AdSense 심사 실패';
+  return '확인 필요';
+}
+
+function renderInsightList(list, services, getMeta) {
+  list.replaceChildren();
+
+  if (services.length === 0) {
+    const empty = document.createElement('li');
+    empty.className = 'insight-empty';
+    empty.textContent = '대상 없음';
+    list.append(empty);
+    return;
+  }
+
+  services.forEach(service => {
+    const item = document.createElement('li');
+    const name = document.createElement('strong');
+    const meta = document.createElement('span');
+    name.textContent = service.name || '이름 없는 서비스';
+    meta.textContent = getMeta(service);
+    item.append(name, meta);
+    list.append(item);
+  });
+}
+
+function renderOperationalInsights() {
+  const insights = calculateOperationalInsights(projects);
+  elements.operationalStatusBadge.textContent = insights.allClear ? '정상' : '확인 필요';
+  elements.operationalStatusBadge.dataset.tone = insights.allClear ? 'success' : 'warning';
+  elements.operationalMessages.replaceChildren(...insights.messages.map(message => {
+    const item = document.createElement('li');
+    item.textContent = message;
+    return item;
+  }));
+  renderInsightList(elements.attentionServices, insights.attentionServices, getAttentionReason);
+  renderInsightList(elements.reviewingServices, insights.reviewingServices, () => '심사 진행 중');
+  renderInsightList(elements.zeroRevenueServices, insights.zeroRevenueServices, service => {
+    const hasTodayRevenue = (Number(service.todayRevenue) || 0) > 0;
+    const hasMonthRevenue = (Number(service.monthRevenue) || 0) > 0;
+    if (!hasTodayRevenue && !hasMonthRevenue) return '오늘/이번 달 수익 0원';
+    if (!hasTodayRevenue) return '오늘 수익 0원';
+    if (!hasMonthRevenue) return '이번 달 수익 0원';
+    return '수익 확인 필요';
+  });
+}
+
 function renderEmptyState(visibleCount) {
   const isEmpty = visibleCount === 0;
   elements.empty.hidden = !isEmpty;
@@ -152,6 +218,7 @@ function renderEmptyState(visibleCount) {
 
 function render() {
   renderSummary();
+  renderOperationalInsights();
 
   const filter = elements.filter.value;
   const visible = filter === 'all' ? projects : projects.filter(project => project.adsenseStatus === filter);
@@ -216,16 +283,36 @@ function closeDialog() {
   elements.dialog.close();
 }
 
+function applyGithubUrlSuggestion() {
+  const githubRepository = parseGithubRepositoryUrl(elements.githubUrlInput.value);
+  elements.githubUrlInput.setCustomValidity('');
+
+  if (!elements.githubUrlInput.value.trim() || !githubRepository) return githubRepository;
+  if (!elements.nameInput.value.trim()) {
+    elements.nameInput.value = suggestProjectNameFromRepository(githubRepository.repo);
+  }
+  return githubRepository;
+}
+
 async function saveForm(event) {
   event.preventDefault();
   if (!canEdit || !store) return;
 
+  const githubUrl = elements.githubUrlInput.value.trim();
+  const githubRepository = applyGithubUrlSuggestion();
+  if (githubUrl && !githubRepository) {
+    elements.githubUrlInput.setCustomValidity('GitHub 저장소 주소를 입력하세요. 예: https://github.com/owner/repo');
+    elements.githubUrlInput.reportValidity();
+    setSyncStatus('GitHub 저장소 주소를 확인해주세요.', 'error');
+    return;
+  }
+
   const id = document.querySelector('#projectId').value;
   const record = normalizeProject({
     id: id || undefined,
-    name: document.querySelector('#name').value,
+    name: elements.nameInput.value,
     url: document.querySelector('#url').value,
-    githubUrl: document.querySelector('#githubUrl').value,
+    githubUrl: githubRepository?.normalizedUrl || githubUrl,
     deployStatus: document.querySelector('#deployStatus').value,
     adsenseStatus: document.querySelector('#adsenseStatus').value,
     todayRevenue: document.querySelector('#todayRevenueInput').value,
@@ -277,6 +364,8 @@ elements.loginGithub.addEventListener('click', () => signIn(elements.loginGithub
 elements.logoutButton.addEventListener('click', signOut);
 document.querySelector('#closeDialog').addEventListener('click', closeDialog);
 document.querySelector('#cancelDialog').addEventListener('click', closeDialog);
+elements.githubUrlInput.addEventListener('input', applyGithubUrlSuggestion);
+elements.githubUrlInput.addEventListener('blur', applyGithubUrlSuggestion);
 elements.filter.addEventListener('change', render);
 elements.form.addEventListener('submit', saveForm);
 
