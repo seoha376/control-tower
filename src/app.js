@@ -1,8 +1,13 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm';
 import { createAuthViewState, getAuthProviders, getOAuthRedirectTo } from './authState.js';
 import {
+  createAdSenseProjectPatch,
+  findMatchingAdSenseSite
+} from './adsenseSync.js';
+import {
   calculateOperationalInsights,
   calculateSummary,
+  getNextActionLabel,
   getStatusLabel,
   normalizeProject
 } from './domain.js';
@@ -32,6 +37,7 @@ const elements = {
   logoutButton: document.querySelector('#logoutButton'),
   syncStatus: document.querySelector('#syncStatus'),
   addButton: document.querySelector('#openProjectDialog'),
+  syncAdsenseButton: document.querySelector('#syncAdsenseButton'),
   list: document.querySelector('#projectList'),
   empty: document.querySelector('#emptyState'),
   emptyTitle: document.querySelector('#emptyTitle'),
@@ -79,6 +85,7 @@ function applyAuthState(viewState) {
   elements.loginGithub.dataset.provider = primaryProvider.provider;
   elements.logoutButton.hidden = viewState.mode !== 'signed-in' && viewState.mode !== 'blocked';
   elements.addButton.disabled = !canEdit;
+  elements.syncAdsenseButton.disabled = !canEdit;
 }
 
 async function signIn(provider) {
@@ -112,6 +119,43 @@ async function refreshProjects() {
     projects = [];
   }
   render();
+}
+
+async function syncAdSenseStatuses() {
+  if (!canEdit || !store) return;
+
+  elements.syncAdsenseButton.disabled = true;
+  setSyncStatus('AdSense 현황을 불러오는 중입니다...');
+
+  try {
+    const response = await fetch('/api/adsense/status');
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(payload.error || 'AdSense 현황을 불러오지 못했습니다.');
+    }
+
+    const sites = payload.sites || [];
+    const updates = projects
+      .map(project => ({
+        project,
+        site: findMatchingAdSenseSite(project, sites)
+      }))
+      .filter(match => match.site);
+
+    for (const { project, site } of updates) {
+      await store.save(normalizeProject({
+        ...project,
+        ...createAdSenseProjectPatch(site)
+      }));
+    }
+
+    setSyncStatus(`AdSense 동기화 완료: ${updates.length}개 서비스`, 'success');
+    await refreshProjects();
+  } catch (error) {
+    setSyncStatus(error.message || 'AdSense 동기화에 실패했습니다.', 'error');
+  } finally {
+    elements.syncAdsenseButton.disabled = !canEdit;
+  }
 }
 
 async function handleSession(session) {
@@ -156,6 +200,13 @@ function getAttentionReason(project) {
   if (project.deployStatus === 'warning') return '배포 확인 필요';
   if (project.adsenseStatus === 'rejected') return 'AdSense 심사 실패';
   return '확인 필요';
+}
+
+function formatNextActionMeta(project) {
+  const parts = [];
+  if (project.nextActionDueDate) parts.push(`기한 ${project.nextActionDueDate}`);
+  if (project.nextActionNote) parts.push(project.nextActionNote);
+  return parts.join(' · ');
 }
 
 function renderInsightList(list, services, getMeta) {
@@ -229,6 +280,7 @@ function render() {
     const card = elements.template.content.firstElementChild.cloneNode(true);
     card.dataset.deploy = project.deployStatus;
     card.dataset.adsense = project.adsenseStatus;
+    card.dataset.nextAction = project.nextAction || 'none';
     card.querySelector('h3').textContent = project.name;
 
     const siteLink = card.querySelector('.site-link');
@@ -237,6 +289,8 @@ function render() {
     if (!project.url) siteLink.removeAttribute('target');
 
     card.querySelector('.note').textContent = project.note || '메모 없음';
+    card.querySelector('.next-action-label').textContent = getNextActionLabel(project.nextAction);
+    card.querySelector('.next-action-meta').textContent = formatNextActionMeta(project);
     card.querySelector('.adsense-badge').textContent = getStatusLabel(project.adsenseStatus);
     card.querySelector('.deploy-label').textContent = deployLabel(project.deployStatus);
     card.querySelector('.today-value').textContent = currency.format(project.todayRevenue);
@@ -275,6 +329,9 @@ function openDialog(project = null) {
   document.querySelector('#adsenseStatus').value = project?.adsenseStatus || 'not_applied';
   document.querySelector('#todayRevenueInput').value = project?.todayRevenue || 0;
   document.querySelector('#monthRevenueInput').value = project?.monthRevenue || 0;
+  document.querySelector('#nextAction').value = project?.nextAction || 'none';
+  document.querySelector('#nextActionDueDate').value = project?.nextActionDueDate || '';
+  document.querySelector('#nextActionNote').value = project?.nextActionNote || '';
   document.querySelector('#note').value = project?.note || '';
   elements.dialog.showModal();
 }
@@ -317,6 +374,9 @@ async function saveForm(event) {
     adsenseStatus: document.querySelector('#adsenseStatus').value,
     todayRevenue: document.querySelector('#todayRevenueInput').value,
     monthRevenue: document.querySelector('#monthRevenueInput').value,
+    nextAction: document.querySelector('#nextAction').value,
+    nextActionDueDate: document.querySelector('#nextActionDueDate').value,
+    nextActionNote: document.querySelector('#nextActionNote').value,
     note: document.querySelector('#note').value
   });
 
@@ -362,6 +422,7 @@ async function init() {
 elements.addButton.addEventListener('click', () => openDialog());
 elements.loginGithub.addEventListener('click', () => signIn(elements.loginGithub.dataset.provider || 'github'));
 elements.logoutButton.addEventListener('click', signOut);
+elements.syncAdsenseButton.addEventListener('click', syncAdSenseStatuses);
 document.querySelector('#closeDialog').addEventListener('click', closeDialog);
 document.querySelector('#cancelDialog').addEventListener('click', closeDialog);
 elements.githubUrlInput.addEventListener('input', applyGithubUrlSuggestion);

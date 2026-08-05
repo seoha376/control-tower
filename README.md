@@ -56,7 +56,24 @@ export const CONTROL_TOWER_CONFIG = {
 ## 다음 연동 후보
 
 - GitHub API: Repository 상태, 마지막 커밋, Actions 성공/실패, 마지막 배포 시간
-- AdSense API: 승인 여부, 오늘 수익, 이번 달 수익
+- AdSense API: 승인 여부 자동 동기화, 오늘 수익, 이번 달 수익
 - Google Analytics API: 방문자, 세션, 인기 페이지
 - Search Console API: 검색 유입, 클릭수, 노출수
 - AI 운영 분석: 수익 감소 원인, 방문자 증가 원인, 배포 실패 요약
+
+## AdSense 자동 동기화 설정
+
+현재 구현은 Vercel 서버리스 API가 Google AdSense Management API에서 사이트 상태를 읽고, Control Tower의 서비스 URL과 도메인이 일치하는 항목만 갱신합니다.
+
+Supabase SQL Editor에서 `docs/supabase-schema.sql`을 다시 실행해 다음 액션 컬럼을 추가합니다.
+
+Vercel Project Settings > Environment Variables에 아래 값을 추가합니다.
+
+```text
+GOOGLE_ADSENSE_CLIENT_ID=Google OAuth 클라이언트 ID
+GOOGLE_ADSENSE_CLIENT_SECRET=Google OAuth 클라이언트 secret
+GOOGLE_ADSENSE_REFRESH_TOKEN=adsense.readonly 스코프로 발급한 refresh token
+GOOGLE_ADSENSE_ACCOUNT_NAME=accounts/pub-... (선택, 비우면 첫 계정 사용)
+```
+
+OAuth refresh token은 `https://www.googleapis.com/auth/adsense.readonly` 스코프로 발급해야 합니다. 배포 후 로그인한 상태에서 `AdSense 동기화` 버튼을 누르면 사이트 상태가 `승인`, `심사 중`, `심사 실패`, `신청 전`으로 반영되고 다음 액션도 함께 갱신됩니다.

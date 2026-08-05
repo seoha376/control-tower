@@ -36,6 +36,9 @@ export function toProjectRow(project, ownerId) {
     adsense_status: normalized.adsenseStatus,
     today_revenue: normalized.todayRevenue,
     month_revenue: normalized.monthRevenue,
+    next_action: normalized.nextAction,
+    next_action_due_date: normalized.nextActionDueDate || null,
+    next_action_note: normalized.nextActionNote,
     note: normalized.note,
     updated_at: normalized.updatedAt
   };
@@ -51,6 +54,9 @@ export function fromProjectRow(row = {}) {
     adsenseStatus: row.adsense_status,
     todayRevenue: row.today_revenue,
     monthRevenue: row.month_revenue,
+    nextAction: row.next_action,
+    nextActionDueDate: row.next_action_due_date,
+    nextActionNote: row.next_action_note,
     note: row.note,
     updatedAt: row.updated_at
   });

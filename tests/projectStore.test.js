@@ -46,6 +46,9 @@ test('project rows keep the browser model and Supabase columns in sync', () => {
     adsenseStatus: 'approved',
     todayRevenue: '1200',
     monthRevenue: '22000',
+    nextAction: 'check_adsense',
+    nextActionDueDate: '2026-08-12',
+    nextActionNote: 'Check policy center',
     note: 'Ready',
     updatedAt: '2026-08-05T00:00:00.000Z'
   }, 'user-1');
@@ -60,6 +63,9 @@ test('project rows keep the browser model and Supabase columns in sync', () => {
     adsense_status: 'approved',
     today_revenue: 1200,
     month_revenue: 22000,
+    next_action: 'check_adsense',
+    next_action_due_date: '2026-08-12',
+    next_action_note: 'Check policy center',
     note: 'Ready',
     updated_at: '2026-08-05T00:00:00.000Z'
   });
@@ -73,6 +79,9 @@ test('project rows keep the browser model and Supabase columns in sync', () => {
     adsenseStatus: 'approved',
     todayRevenue: 1200,
     monthRevenue: 22000,
+    nextAction: 'check_adsense',
+    nextActionDueDate: '2026-08-12',
+    nextActionNote: 'Check policy center',
     note: 'Ready',
     updatedAt: '2026-08-05T00:00:00.000Z'
   });

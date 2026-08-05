@@ -82,13 +82,16 @@
             <p class="eyebrow">WEBSITES</p>
             <h2>운영 서비스</h2>
           </div>
-          <select id="statusFilter" aria-label="AdSense 상태 필터">
-            <option value="all">전체 상태</option>
-            <option value="not_applied">신청 전</option>
-            <option value="reviewing">심사 중</option>
-            <option value="approved">승인</option>
-            <option value="rejected">심사 실패</option>
-          </select>
+          <div class="panel-tools">
+            <button id="syncAdsenseButton" class="secondary-button" type="button" disabled>AdSense 동기화</button>
+            <select id="statusFilter" aria-label="AdSense 상태 필터">
+              <option value="all">전체 상태</option>
+              <option value="not_applied">신청 전</option>
+              <option value="reviewing">심사 중</option>
+              <option value="approved">승인</option>
+              <option value="rejected">심사 실패</option>
+            </select>
+          </div>
         </div>
         <div id="projectList" class="project-list"></div>
         <div id="emptyState" class="empty-state" hidden>
@@ -130,6 +133,9 @@
         <label>AdSense 상태<select id="adsenseStatus"><option value="not_applied">신청 전</option><option value="reviewing">심사 중</option><option value="approved">승인</option><option value="rejected">심사 실패</option></select></label>
         <label>오늘 수익(원)<input id="todayRevenueInput" type="number" min="0" step="1" value="0" /></label>
         <label>이번 달 수익(원)<input id="monthRevenueInput" type="number" min="0" step="1" value="0" /></label>
+        <label>다음 액션<select id="nextAction"><option value="none">없음</option><option value="apply_adsense">AdSense 신청</option><option value="check_adsense">AdSense 확인</option><option value="fix_deploy">배포 오류 확인</option><option value="check_revenue">수익 확인</option><option value="update_content">콘텐츠 업데이트</option><option value="custom">직접 입력</option></select></label>
+        <label>액션 기한<input id="nextActionDueDate" type="date" /></label>
+        <label class="full-width">액션 메모<textarea id="nextActionNote" rows="2" placeholder="다음에 확인할 내용"></textarea></label>
         <label class="full-width">메모<textarea id="note" rows="3" placeholder="심사 사유, 수정 내용, 다음 작업"></textarea></label>
       </div>
       <div class="dialog-actions">
@@ -147,6 +153,10 @@
           <div class="project-title-row"><h3></h3><span class="adsense-badge"></span></div>
           <a class="site-link" target="_blank" rel="noreferrer"></a>
           <p class="note"></p>
+          <div class="next-action">
+            <span class="next-action-label"></span>
+            <small class="next-action-meta"></small>
+          </div>
         </div>
       </div>
       <div class="project-metrics">

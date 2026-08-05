@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   calculateOperationalInsights,
   calculateSummary,
+  getNextActionLabel,
   getStatusLabel,
   normalizeProject
 } from '../src/domain.js';
@@ -149,7 +150,30 @@ test('normalizeProject supplies safe defaults and numeric revenue', () => {
   assert.equal(project.deployStatus, 'unknown');
   assert.equal(project.todayRevenue, 2.4);
   assert.equal(project.monthRevenue, 0);
+  assert.equal(project.nextAction, 'none');
+  assert.equal(project.nextActionDueDate, '');
+  assert.equal(project.nextActionNote, '');
   assert.ok(project.id);
+});
+
+test('normalizeProject keeps the next action checklist fields tidy', () => {
+  const project = normalizeProject({
+    name: 'Hot Appearance',
+    nextAction: 'check_adsense',
+    nextActionDueDate: '2026-08-12',
+    nextActionNote: 'Review the rejection message'
+  });
+
+  assert.equal(project.nextAction, 'check_adsense');
+  assert.equal(project.nextActionDueDate, '2026-08-12');
+  assert.equal(project.nextActionNote, 'Review the rejection message');
+});
+
+test('getNextActionLabel returns readable Korean labels', () => {
+  assert.equal(getNextActionLabel('apply_adsense'), 'AdSense 신청');
+  assert.equal(getNextActionLabel('check_adsense'), 'AdSense 확인');
+  assert.equal(getNextActionLabel('none'), '다음 액션 없음');
+  assert.equal(getNextActionLabel('unexpected'), '다음 액션 없음');
 });
 
 test('getStatusLabel returns Korean labels', () => {

@@ -295,6 +295,14 @@ h2, h3, p { margin-top: 0; }
   padding: 10px;
 }
 
+.panel-tools {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .project-list {
   display: grid;
   gap: 10px;
@@ -351,6 +359,10 @@ h2, h3, p { margin-top: 0; }
 .project-card[data-adsense="approved"] .adsense-badge { background: #173c31; color: #7aebbc; }
 .project-card[data-adsense="reviewing"] .adsense-badge { background: #493816; color: #ffd477; }
 .project-card[data-adsense="rejected"] .adsense-badge { background: #461f27; color: #ff9ba5; }
+.project-card[data-next-action="none"] .next-action {
+  border-color: #202832;
+  color: #7d8793;
+}
 
 .site-link {
   display: inline-block;
@@ -365,6 +377,30 @@ h2, h3, p { margin-top: 0; }
 .note {
   margin: 0;
   font-size: 12px;
+}
+
+.next-action {
+  display: grid;
+  gap: 4px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid #314154;
+  border-radius: 8px;
+  background: #111820;
+}
+
+.next-action-label {
+  color: #dce5ee;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.next-action-meta {
+  min-height: 14px;
+  color: #9aa5b1;
+  font-size: 11px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .project-metrics {
@@ -500,6 +536,7 @@ dialog form {
     align-items: flex-start;
     flex-direction: column;
   }
+  .panel-tools { justify-content: flex-start; }
   .summary-grid { grid-template-columns: 1fr 1fr; }
   .summary-card { min-height: 100px; }
   .project-metrics { grid-template-columns: repeat(3, 1fr); }

@@ -5,11 +5,26 @@ const STATUS_LABELS = {
   rejected: '심사 실패'
 };
 
+const NEXT_ACTION_LABELS = {
+  none: '다음 액션 없음',
+  apply_adsense: 'AdSense 신청',
+  check_adsense: 'AdSense 확인',
+  fix_deploy: '배포 오류 확인',
+  check_revenue: '수익 확인',
+  update_content: '콘텐츠 업데이트',
+  custom: '직접 입력'
+};
+
 export function getStatusLabel(status) {
   return STATUS_LABELS[status] ?? '알 수 없음';
 }
 
+export function getNextActionLabel(action) {
+  return NEXT_ACTION_LABELS[action] ?? NEXT_ACTION_LABELS.none;
+}
+
 export function normalizeProject(input = {}) {
+  const nextAction = NEXT_ACTION_LABELS[input.nextAction] ? input.nextAction : 'none';
   return {
     id: input.id || globalThis.crypto?.randomUUID?.() || `project-${Date.now()}-${Math.random()}`,
     name: String(input.name || '새 서비스').trim(),
@@ -19,6 +34,9 @@ export function normalizeProject(input = {}) {
     adsenseStatus: input.adsenseStatus || 'not_applied',
     todayRevenue: Number(input.todayRevenue) || 0,
     monthRevenue: Number(input.monthRevenue) || 0,
+    nextAction,
+    nextActionDueDate: String(input.nextActionDueDate || '').trim(),
+    nextActionNote: String(input.nextActionNote || '').trim(),
     note: String(input.note || '').trim(),
     updatedAt: input.updatedAt || new Date().toISOString()
   };

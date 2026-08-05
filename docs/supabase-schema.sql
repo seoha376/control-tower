@@ -8,9 +8,17 @@ create table if not exists public.projects (
   adsense_status text not null default 'not_applied',
   today_revenue numeric not null default 0,
   month_revenue numeric not null default 0,
+  next_action text not null default 'none',
+  next_action_due_date date,
+  next_action_note text default '',
   note text default '',
   updated_at timestamptz not null default now()
 );
+
+alter table public.projects
+  add column if not exists next_action text not null default 'none',
+  add column if not exists next_action_due_date date,
+  add column if not exists next_action_note text default '';
 
 alter table public.projects enable row level security;
 
