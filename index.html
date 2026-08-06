@@ -49,21 +49,6 @@
         </div>
       </section>
 
-      <section class="panel adsense-connection-panel" aria-labelledby="adsenseConnectionTitle">
-        <div class="panel-header">
-          <div>
-            <p class="eyebrow">ADSENSE CONNECTION</p>
-            <h2 id="adsenseConnectionTitle">Google AdSense</h2>
-          </div>
-          <span id="adsenseConnectionBadge" class="operational-status-badge" data-tone="warning">Connection needed</span>
-        </div>
-        <p id="adsenseConnectionMessage" class="connection-message">Sign in, then connect Google AdSense to sync site approval status with your own account.</p>
-        <div class="connection-actions">
-          <button id="connectAdsenseButton" class="secondary-button" type="button" disabled>Connect Google AdSense</button>
-          <button id="disconnectAdsenseButton" class="secondary-button" type="button" disabled>Disconnect</button>
-        </div>
-      </section>
-
       <section class="panel public-guide" id="public-guide" aria-labelledby="publicGuideTitle">
         <div>
           <p class="eyebrow">PUBLIC GUIDE</p>
@@ -91,8 +76,8 @@
 
       <section class="summary-grid" aria-label="운영 요약 지표">
         <article class="summary-card"><span>전체 서비스</span><strong id="projectCount">0</strong></article>
-        <article class="summary-card"><span>AdSense 승인</span><strong id="approvedCount">0</strong></article>
         <article class="summary-card"><span>심사 중</span><strong id="reviewingCount">0</strong></article>
+        <article class="summary-card"><span>AdSense 승인</span><strong id="approvedCount">0</strong></article>
         <article class="summary-card"><span>오늘 수익</span><strong id="todayRevenue">0원</strong></article>
         <article class="summary-card featured"><span>이번 달 수익</span><strong id="monthRevenue">0원</strong></article>
       </section>
@@ -129,7 +114,10 @@
             <h2>운영 서비스</h2>
           </div>
           <div class="panel-tools">
-            <button id="syncAdsenseButton" class="secondary-button" type="button" disabled>AdSense 동기화</button>
+            <div class="sync-action-group">
+              <button id="syncAdsenseButton" class="primary-button sync-adsense-button" type="button" disabled>AdSense 동기화</button>
+              <p id="adsenseSyncHint" class="sync-hint">현재 AdSense 상태는 이 버튼을 눌러야 반영됩니다.</p>
+            </div>
             <select id="statusFilter" aria-label="AdSense 상태 필터">
               <option value="all">전체 상태</option>
               <option value="not_applied">신청 전</option>
@@ -139,6 +127,20 @@
             </select>
           </div>
         </div>
+        <section class="adsense-connection-panel" aria-labelledby="adsenseConnectionTitle">
+          <div class="connection-header">
+            <div>
+              <p class="eyebrow">ADSENSE CONNECTION</p>
+              <h3 id="adsenseConnectionTitle">Google AdSense 연결</h3>
+            </div>
+            <span id="adsenseConnectionBadge" class="operational-status-badge" data-tone="warning">Connection needed</span>
+          </div>
+          <p id="adsenseConnectionMessage" class="connection-message">AdSense 계정을 연결하면 사이트 승인 상태를 내 계정 기준으로 동기화할 수 있습니다.</p>
+          <div class="connection-actions">
+            <button id="connectAdsenseButton" class="secondary-button" type="button" disabled>Google AdSense 연결</button>
+            <button id="disconnectAdsenseButton" class="secondary-button" type="button" disabled>연결 해제</button>
+          </div>
+        </section>
         <div id="projectList" class="project-list"></div>
         <div id="emptyState" class="empty-state" hidden>
           <h3 id="emptyTitle">표시할 서비스가 없습니다.</h3>

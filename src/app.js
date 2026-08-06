@@ -175,11 +175,11 @@ async function syncAdSenseStatuses() {
 function renderAdSenseConnection(connection) {
   const status = connection?.connectionStatus || 'needs_connection';
   const connected = status === 'connected';
-  elements.adsenseConnectionBadge.textContent = connected ? 'Connected' : 'Connection needed';
+  elements.adsenseConnectionBadge.textContent = connected ? '연결됨' : '연결 필요';
   elements.adsenseConnectionBadge.dataset.tone = connected ? 'success' : 'warning';
   elements.adsenseConnectionMessage.textContent = connected
-    ? `Connected account: ${connection.providerAccountId || 'Google AdSense'}`
-    : 'Connect Google AdSense to sync site approval status with the signed-in user account.';
+    ? `연결된 계정: ${connection.providerAccountId || 'Google AdSense'}`
+    : 'AdSense 계정을 연결하면 사이트 승인 상태를 로그인한 계정 기준으로 동기화할 수 있습니다.';
   elements.disconnectAdsenseButton.disabled = !canEdit || !connected;
 }
 
@@ -197,9 +197,9 @@ async function refreshAdSenseConnection() {
     if (!response.ok) throw new Error(payload.error || 'AdSense connection status unavailable.');
     renderAdSenseConnection(payload);
   } catch (error) {
-    elements.adsenseConnectionBadge.textContent = 'Connection unknown';
+    elements.adsenseConnectionBadge.textContent = '연결 확인 필요';
     elements.adsenseConnectionBadge.dataset.tone = 'warning';
-    elements.adsenseConnectionMessage.textContent = error.message || 'AdSense connection status unavailable.';
+    elements.adsenseConnectionMessage.textContent = error.message || 'AdSense 연결 상태를 확인하지 못했습니다.';
   }
 }
 
