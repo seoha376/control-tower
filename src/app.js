@@ -34,6 +34,18 @@ const elements = {
   authMessage: document.querySelector('#authMessage'),
   loginGithub: document.querySelector('#loginGithub'),
   logoutButton: document.querySelector('#logoutButton'),
+  openGuideButton: document.querySelector('#openGuideButton'),
+  guideDialog: document.querySelector('#guideDialog'),
+  closeGuideDialog: document.querySelector('#closeGuideDialog'),
+  profileMenu: document.querySelector('#profileMenu'),
+  profileButton: document.querySelector('#profileButton'),
+  profileAvatar: document.querySelector('#profileAvatar'),
+  profileFallback: document.querySelector('#profileFallback'),
+  profileName: document.querySelector('#profileName'),
+  profileEmail: document.querySelector('#profileEmail'),
+  profileProjectCount: document.querySelector('#profileProjectCount'),
+  profileAdsenseStatus: document.querySelector('#profileAdsenseStatus'),
+  profileLogoutButton: document.querySelector('#profileLogoutButton'),
   syncStatus: document.querySelector('#syncStatus'),
   adsenseConnectionBadge: document.querySelector('#adsenseConnectionBadge'),
   adsenseConnectionMessage: document.querySelector('#adsenseConnectionMessage'),
@@ -82,16 +94,35 @@ function applyAuthState(viewState) {
   canEdit = viewState.canEdit;
   const [primaryProvider] = getAuthProviders();
   elements.authPanel.dataset.mode = viewState.mode;
+  elements.authPanel.hidden = viewState.mode === 'signed-in';
   elements.authTitle.textContent = viewState.title;
   elements.authMessage.textContent = viewState.message;
   elements.loginGithub.hidden = viewState.mode !== 'signed-out';
   elements.loginGithub.textContent = primaryProvider.label;
   elements.loginGithub.dataset.provider = primaryProvider.provider;
   elements.logoutButton.hidden = viewState.mode !== 'signed-in' && viewState.mode !== 'blocked';
+  elements.profileMenu.hidden = viewState.mode !== 'signed-in';
+  elements.profileButton.setAttribute('aria-expanded', 'false');
   elements.addButton.disabled = !canEdit;
   elements.syncAdsenseButton.disabled = !canEdit;
   elements.connectAdsenseButton.disabled = !canEdit;
   elements.disconnectAdsenseButton.disabled = !canEdit;
+}
+
+function getUserAvatarUrl(user = {}) {
+  return user.user_metadata?.avatar_url || user.user_metadata?.picture || '';
+}
+
+function renderProfileMenu(user = null) {
+  if (!user) return;
+  const displayName = user.user_metadata?.user_name || user.user_metadata?.name || user.email || 'GitHub 계정';
+  const avatarUrl = getUserAvatarUrl(user);
+  elements.profileName.textContent = displayName;
+  elements.profileEmail.textContent = user.email || '';
+  elements.profileFallback.textContent = displayName.trim().charAt(0).toUpperCase() || '?';
+  elements.profileAvatar.hidden = !avatarUrl;
+  elements.profileFallback.hidden = Boolean(avatarUrl);
+  if (avatarUrl) elements.profileAvatar.src = avatarUrl;
 }
 
 function getAuthHeaders() {
@@ -177,6 +208,7 @@ function renderAdSenseConnection(connection) {
   const connected = status === 'connected';
   elements.adsenseConnectionBadge.textContent = connected ? '연결됨' : '연결 필요';
   elements.adsenseConnectionBadge.dataset.tone = connected ? 'success' : 'warning';
+  elements.profileAdsenseStatus.textContent = connected ? '연결됨' : '연결 필요';
   elements.adsenseConnectionMessage.textContent = connected
     ? `연결된 계정: ${connection.providerAccountId || 'Google AdSense'}`
     : 'AdSense 계정을 연결하면 사이트 승인 상태를 로그인한 계정 기준으로 동기화할 수 있습니다.';
@@ -245,6 +277,7 @@ async function handleSession(session) {
     authorized
   });
   applyAuthState(viewState);
+  renderProfileMenu(user);
 
   if (!user) {
     store = null;
@@ -273,6 +306,7 @@ function renderSummary() {
   document.querySelector('#reviewingCount').textContent = summary.reviewingCount;
   document.querySelector('#todayRevenue').textContent = currency.format(summary.todayRevenue);
   document.querySelector('#monthRevenue').textContent = currency.format(summary.monthRevenue);
+  elements.profileProjectCount.textContent = summary.projectCount;
 }
 
 function getAttentionReason(project) {
@@ -494,6 +528,16 @@ async function init() {
 elements.addButton.addEventListener('click', () => openDialog());
 elements.loginGithub.addEventListener('click', () => signIn(elements.loginGithub.dataset.provider || 'github'));
 elements.logoutButton.addEventListener('click', signOut);
+elements.profileLogoutButton.addEventListener('click', signOut);
+elements.profileButton.addEventListener('click', () => {
+  const open = elements.profileMenu.classList.toggle('open');
+  elements.profileButton.setAttribute('aria-expanded', String(open));
+});
+elements.openGuideButton.addEventListener('click', () => elements.guideDialog.showModal());
+elements.closeGuideDialog.addEventListener('click', () => elements.guideDialog.close());
+elements.guideDialog.addEventListener('click', event => {
+  if (event.target === elements.guideDialog) elements.guideDialog.close();
+});
 elements.syncAdsenseButton.addEventListener('click', syncAdSenseStatuses);
 elements.connectAdsenseButton.addEventListener('click', connectAdSense);
 elements.disconnectAdsenseButton.addEventListener('click', disconnectAdSense);

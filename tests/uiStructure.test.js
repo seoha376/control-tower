@@ -24,3 +24,22 @@ test('AdSense sync is presented as a prominent manual refresh action', () => {
   assert.match(html, /id="syncAdsenseButton" class="primary-button sync-adsense-button"/);
   assert.match(html, /id="adsenseSyncHint"/);
 });
+
+test('signed-in account work is grouped behind the topbar profile menu', () => {
+  const html = read('index.html');
+
+  assert.match(html, /class="topbar-actions"/);
+  assert.match(html, /id="profileMenu"/);
+  assert.match(html, /id="profileAvatar"/);
+  assert.match(html, /id="profileProjectCount"/);
+  assert.match(html, /id="profileAdsenseStatus"/);
+  assert.match(html, /id="profileLogoutButton"/);
+});
+
+test('public guide opens from navigation without occupying the main dashboard flow', () => {
+  const html = read('index.html');
+
+  assert.match(html, /id="openGuideButton"/);
+  assert.match(html, /<dialog id="guideDialog"/);
+  assert.equal(/<section class="panel public-guide"/.test(html), false);
+});

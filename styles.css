@@ -53,6 +53,14 @@ nav {
   border-radius: 8px;
 }
 
+.nav-button {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
 .nav-item.active,
 .nav-item:hover {
   color: #ffffff;
@@ -83,6 +91,75 @@ main {
   justify-content: space-between;
   align-items: center;
   gap: 18px;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.profile-menu {
+  position: relative;
+}
+
+.profile-button {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid #343d49;
+  border-radius: 50%;
+  background: #171d24;
+  color: #ffffff;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.profile-button img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 20;
+  width: 250px;
+  display: none;
+  padding: 14px;
+  border: 1px solid #343d49;
+  border-radius: 8px;
+  background: #10151b;
+  box-shadow: 0 18px 48px #0008;
+}
+
+.profile-menu:hover .profile-dropdown,
+.profile-menu:focus-within .profile-dropdown,
+.profile-menu.open .profile-dropdown {
+  display: grid;
+  gap: 10px;
+}
+
+.profile-email {
+  color: #9aa5b1;
+  font-size: 12px;
+  word-break: break-word;
+}
+
+.profile-stats {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: #b6c0cc;
+  font-size: 12px;
+}
+
+.profile-stats strong {
+  color: #ffffff;
 }
 
 h1 {
@@ -496,6 +573,10 @@ dialog form {
   padding: 24px;
 }
 
+.guide-dialog {
+  padding: 24px;
+}
+
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -644,6 +725,13 @@ dialog form {
   .auth-panel {
     align-items: flex-start;
     flex-direction: column;
+  }
+  .topbar-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .profile-dropdown {
+    right: 0;
   }
   .panel-tools { justify-content: flex-start; }
   .summary-grid { grid-template-columns: 1fr 1fr; }

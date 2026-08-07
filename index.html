@@ -16,7 +16,7 @@
       <p class="brand-copy">개인 웹서비스 운영센터</p>
       <nav aria-label="주요 화면">
         <a class="nav-item active" href="#dashboard">Dashboard</a>
-        <a class="nav-item" href="#public-guide">Guide</a>
+        <button id="openGuideButton" class="nav-item nav-button" type="button">Guide</button>
         <a class="nav-item" href="#projects">Websites</a>
         <a class="nav-item" href="#roadmap">Roadmap</a>
         <a class="nav-item" href="./about.html">About</a>
@@ -33,7 +33,28 @@
           <h1>모든 서비스를 한 곳에서 관리합니다</h1>
           <p class="subtitle">배포 상태, AdSense 심사, 수익 기록을 Supabase에 저장하고 Vercel 배포를 기준으로 운영합니다.</p>
         </div>
-        <button id="openProjectDialog" class="primary-button" disabled>서비스 추가</button>
+        <div class="topbar-actions">
+          <button id="openProjectDialog" class="primary-button" disabled>서비스 추가</button>
+          <div id="profileMenu" class="profile-menu" hidden>
+            <button id="profileButton" class="profile-button" type="button" aria-haspopup="true" aria-expanded="false" aria-label="계정 메뉴">
+              <img id="profileAvatar" alt="" hidden />
+              <span id="profileFallback" aria-hidden="true">?</span>
+            </button>
+            <div id="profileDropdown" class="profile-dropdown" role="menu">
+              <strong id="profileName">GitHub 계정</strong>
+              <span id="profileEmail" class="profile-email"></span>
+              <div class="profile-stats">
+                <span>운영 웹사이트</span>
+                <strong><span id="profileProjectCount">0</span>개</strong>
+              </div>
+              <div class="profile-stats">
+                <span>AdSense</span>
+                <strong id="profileAdsenseStatus">확인 필요</strong>
+              </div>
+              <button id="profileLogoutButton" class="secondary-button" type="button" role="menuitem">로그아웃</button>
+            </div>
+          </div>
+        </div>
       </header>
 
       <section id="authPanel" class="auth-panel" data-mode="setup" aria-live="polite">
@@ -46,31 +67,6 @@
         <div class="auth-actions">
           <button id="loginGithub" class="secondary-button" type="button" hidden>GitHub로 로그인</button>
           <button id="logoutButton" class="secondary-button" type="button" hidden>로그아웃</button>
-        </div>
-      </section>
-
-      <section class="panel public-guide" id="public-guide" aria-labelledby="publicGuideTitle">
-        <div>
-          <p class="eyebrow">PUBLIC GUIDE</p>
-          <h2 id="publicGuideTitle">Control Tower 사용 가이드</h2>
-        </div>
-        <div class="guide-grid">
-          <article>
-            <h3>무엇을 관리하나요</h3>
-            <p>Control Tower는 여러 웹서비스의 배포 상태, AdSense 승인 상태, 수익 메모, 다음 작업을 한 곳에서 확인하는 AdSense 운영 대시보드입니다.</p>
-          </article>
-          <article>
-            <h3>심사 흐름</h3>
-            <p>각 서비스에는 사이트 주소, GitHub 주소, 배포 상태, AdSense 심사 상태, 작업 기한, 운영 메모가 저장됩니다. 심사 중이거나 추가 확인이 필요한 서비스는 대시보드에서 바로 드러나도록 정리됩니다.</p>
-          </article>
-          <article>
-            <h3>동기화 방식</h3>
-            <p>로그인한 사용자는 본인의 Google AdSense 계정을 연결할 수 있습니다. 서버는 AdSense Management API로 사이트 승인 상태를 읽고, 해당 사용자에게 속한 서비스 기록만 업데이트합니다.</p>
-          </article>
-          <article>
-            <h3>비공개 데이터</h3>
-            <p>개인 대시보드는 GitHub 로그인이 필요합니다. 공개 페이지는 서비스 설명만 제공하고, 서비스 기록, 수익 메모, 연결 계정 토큰, 사용자별 웹사이트 목록은 Supabase row level security로 보호됩니다.</p>
-          </article>
         </div>
       </section>
 
@@ -162,6 +158,34 @@
       </section>
     </main>
   </div>
+
+  <dialog id="guideDialog" class="guide-dialog">
+    <div class="dialog-header">
+      <div>
+        <p class="eyebrow">PUBLIC GUIDE</p>
+        <h2 id="publicGuideTitle">Control Tower 사용 가이드</h2>
+      </div>
+      <button type="button" class="icon-button" id="closeGuideDialog" aria-label="닫기">x</button>
+    </div>
+    <div class="guide-grid">
+      <article>
+        <h3>무엇을 관리하나요</h3>
+        <p>Control Tower는 여러 웹서비스의 배포 상태, AdSense 승인 상태, 수익 메모, 다음 작업을 한 곳에서 확인하는 AdSense 운영 대시보드입니다.</p>
+      </article>
+      <article>
+        <h3>심사 흐름</h3>
+        <p>각 서비스에는 사이트 주소, GitHub 주소, 배포 상태, AdSense 심사 상태, 작업 기한, 운영 메모가 저장됩니다. 심사 중이거나 추가 확인이 필요한 서비스는 대시보드에서 바로 드러나도록 정리됩니다.</p>
+      </article>
+      <article>
+        <h3>동기화 방식</h3>
+        <p>로그인한 사용자는 본인의 Google AdSense 계정을 연결할 수 있습니다. 서버는 AdSense Management API로 사이트 승인 상태를 읽고, 해당 사용자에게 속한 서비스 기록만 업데이트합니다.</p>
+      </article>
+      <article>
+        <h3>비공개 데이터</h3>
+        <p>개인 대시보드는 GitHub 로그인이 필요합니다. 공개 페이지는 서비스 설명만 제공하고, 서비스 기록, 수익 메모, 연결 계정 토큰, 사용자별 웹사이트 목록은 Supabase row level security로 보호됩니다.</p>
+      </article>
+    </div>
+  </dialog>
 
   <dialog id="projectDialog">
     <form id="projectForm" method="dialog">
