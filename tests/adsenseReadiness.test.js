@@ -25,10 +25,10 @@ test('index exposes AdSense ownership and public navigation', () => {
 test('index includes enough public product content before login', () => {
   const html = read('index.html');
 
-  assert.match(html, /Public guide/);
-  assert.match(html, /AdSense operations dashboard/);
-  assert.match(html, /approval status/);
-  assert.match(html, /revenue notes/);
+  assert.match(html, /Control Tower 사용 가이드/);
+  assert.match(html, /AdSense 운영 대시보드/);
+  assert.match(html, /승인 상태/);
+  assert.match(html, /수익 메모/);
 });
 
 test('ads.txt declares the publisher account accurately', () => {
